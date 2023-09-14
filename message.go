@@ -1,7 +1,7 @@
 // @@
 // @ Author       : Eacher
 // @ Date         : 2023-09-12 08:12:21
-// @ LastEditTime : 2023-09-14 08:18:49
+// @ LastEditTime : 2023-09-14 09:47:51
 // @ LastEditors  : Eacher
 // @ --------------------------------------------------------------------------------<
 // @ Description  : 
@@ -19,7 +19,7 @@ import (
 
 const ReceiveDataSize = 1024
 
-type SendMessage struct {
+type SendNLMessage struct {
 	*packet.NlMsghdr
 	sa		syscall.Sockaddr
 
@@ -27,7 +27,7 @@ type SendMessage struct {
 	Data 	[]byte
 }
 
-func (sm *SendMessage) sendto(fd uintptr) bool {
+func (sm *SendNLMessage) sendto(fd uintptr) bool {
 	if sm.Len < uint32(packet.SizeofNlMsghdr + len(sm.Data)) {
 		sm.Err = fmt.Errorf("data len error")
 		return false
@@ -42,15 +42,19 @@ func (sm *SendMessage) sendto(fd uintptr) bool {
 	return true
 }
 
-type ReceiveMessage struct {
-	Data 	[]byte
-	Idx 	int
-	Err		error
-	MsgList	[]*packet.NetlinkMessage
-	Sa		syscall.Sockaddr
+type ReceiveNLMessage struct {
+	Data 		[]byte
+	Idx 		int
+	Err			error
+	MsgList		[]*packet.NetlinkMessage
+	Sa			syscall.Sockaddr
+	Exchange	func(uintptr)bool
 }
 
-func (rm *ReceiveMessage) recvfrom(fd uintptr) bool {
+func (rm *ReceiveNLMessage) recvfrom(fd uintptr) bool {
+	if rm.Exchange != nil {
+		return rm.Exchange(fd)
+	}
 	if rm.Idx, rm.Sa, rm.Err = syscall.Recvfrom(int(fd), rm.Data, 0); rm.Err != nil {
 		return false
 	}

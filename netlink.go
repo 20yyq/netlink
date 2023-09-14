@@ -1,7 +1,7 @@
 // @@
 // @ Author       : Eacher
 // @ Date         : 2023-09-11 11:04:00
-// @ LastEditTime : 2023-09-14 08:20:11
+// @ LastEditTime : 2023-09-14 09:48:00
 // @ LastEditors  : Eacher
 // @ --------------------------------------------------------------------------------<
 // @ Description  : 
@@ -41,7 +41,7 @@ func (nlr *NetlinkRoute) Init() error {
 	return nlr.Err
 }
 
-func (nlr *NetlinkRoute) Exchange(sm *SendMessage, rm *ReceiveMessage) error {
+func (nlr *NetlinkRoute) Exchange(sm *SendNLMessage, rm *ReceiveNLMessage) error {
 	nlr.mutex.Lock()
 	defer func(old bool){
 		nlr.isExchange = old; nlr.mutex.Unlock()
@@ -61,19 +61,19 @@ func (nlr *NetlinkRoute) Exchange(sm *SendMessage, rm *ReceiveMessage) error {
 	return sm.Err
 }
 
-func (nlr *NetlinkRoute) Receive() (<-chan *ReceiveMessage, error) {
+func (nlr *NetlinkRoute) Receive() (<-chan *ReceiveNLMessage, error) {
 	nlr.mutex.Lock()
 	defer nlr.mutex.Unlock()
 	if nlr.isExchange {
 		return nil, fmt.Errorf("io busy")
 	}
 	nlr.isExchange = true
-	notify := make(chan *ReceiveMessage, 5)
+	notify := make(chan *ReceiveNLMessage, 5)
 	go nlr.receive(notify)
 	return notify, nil
 }
 
-func (nlr *NetlinkRoute) Send(sm *SendMessage) error {
+func (nlr *NetlinkRoute) Send(sm *SendNLMessage) error {
 	nlr.mutex.Lock()
 	var is bool
 	is, sm.Err = nlr.isExchange, fmt.Errorf("io busy")
@@ -87,9 +87,9 @@ func (nlr *NetlinkRoute) Send(sm *SendMessage) error {
 	return sm.Err
 }
 
-func (nlr *NetlinkRoute) receive(r chan<- *ReceiveMessage) {
+func (nlr *NetlinkRoute) receive(r chan<- *ReceiveNLMessage) {
 	for {
-		rm := &ReceiveMessage{Data: make([]byte, ReceiveDataSize)}
+		rm := &ReceiveNLMessage{Data: make([]byte, ReceiveDataSize)}
 		if err := nlr.read(rm.recvfrom); rm.Err == nil {
 			rm.Err = err
 		}
