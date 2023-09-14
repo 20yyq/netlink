@@ -1,7 +1,7 @@
 // @@
 // @ Author       : Eacher
 // @ Date         : 2023-09-12 14:06:55
-// @ LastEditTime : 2023-09-12 15:02:05
+// @ LastEditTime : 2023-09-14 10:22:45
 // @ LastEditors  : Eacher
 // @ --------------------------------------------------------------------------------<
 // @ Description  : 
@@ -16,7 +16,8 @@ import (
 )
 
 type conn struct {
-	rawConn		syscall.RawConn
+	f		*os.File
+	rawConn	syscall.RawConn
 }
 
 func newConn(domain, typ, proto int) (*conn, error) {
@@ -27,9 +28,9 @@ func newConn(domain, typ, proto int) (*conn, error) {
 	if err = syscall.SetNonblock(fd, true); err != nil {
 		return nil, err
 	}
-	conn, f := new(conn), os.NewFile(uintptr(fd), "netlink_dev")
-	if conn.rawConn, err = f.SyscallConn(); err != nil {
-		f.Close()
+	conn := &conn{f: os.NewFile(uintptr(fd), "netlink_dev")}
+	if conn.rawConn, err = conn.f.SyscallConn(); err != nil {
+		conn.f.Close()
 		return nil, err
 	}
 	return conn, nil

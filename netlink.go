@@ -1,7 +1,7 @@
 // @@
 // @ Author       : Eacher
 // @ Date         : 2023-09-11 11:04:00
-// @ LastEditTime : 2023-09-14 09:48:00
+// @ LastEditTime : 2023-09-14 10:31:08
 // @ LastEditors  : Eacher
 // @ --------------------------------------------------------------------------------<
 // @ Description  : 
@@ -12,6 +12,7 @@ package netlink
 
 import (
 	"fmt"
+	"time"
 	"io"
 	"sync"
 	"syscall"
@@ -52,7 +53,12 @@ func (nlr *NetlinkRoute) Exchange(sm *SendNLMessage, rm *ReceiveNLMessage) error
 	nlr.isExchange, sm.sa = true, syscall.Sockaddr(nlr.Sal)
 	if err := nlr.write(sm.sendto); sm.Err == nil {
 		if sm.Err = err; sm.Err == nil {
-			if err = nlr.read(rm.recvfrom); rm.Err == nil {
+			f := rm.recvfrom
+			if rm.Exchange != nil && rm.OutTime > 0 {
+				nlr.f.SetReadDeadline(time.Now().Add(rm.OutTime))
+				f = rm.Exchange
+			}
+			if err = nlr.read(f); rm.Err == nil {
 				rm.Err = err
 			}
 			return rm.Err
