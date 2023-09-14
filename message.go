@@ -1,7 +1,7 @@
 // @@
 // @ Author       : Eacher
 // @ Date         : 2023-09-12 08:12:21
-// @ LastEditTime : 2023-09-12 16:25:07
+// @ LastEditTime : 2023-09-14 08:18:49
 // @ LastEditors  : Eacher
 // @ --------------------------------------------------------------------------------<
 // @ Description  : 
@@ -43,18 +43,17 @@ func (sm *SendMessage) sendto(fd uintptr) bool {
 }
 
 type ReceiveMessage struct {
-	data 	[]byte
-	idx 	int
-
+	Data 	[]byte
+	Idx 	int
 	Err		error
 	MsgList	[]*packet.NetlinkMessage
 	Sa		syscall.Sockaddr
 }
 
 func (rm *ReceiveMessage) recvfrom(fd uintptr) bool {
-	if rm.idx, rm.Sa, rm.Err = syscall.Recvfrom(int(fd), rm.data, 0); rm.Err != nil {
+	if rm.Idx, rm.Sa, rm.Err = syscall.Recvfrom(int(fd), rm.Data, 0); rm.Err != nil {
 		return false
 	}
-	rm.MsgList = packet.NewNetlinkMessage(rm.data[:rm.idx])
+	rm.MsgList = packet.NewNetlinkMessage(rm.Data[:rm.Idx])
 	return true
 }

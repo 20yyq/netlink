@@ -1,7 +1,7 @@
 // @@
 // @ Author       : Eacher
 // @ Date         : 2023-09-11 11:04:00
-// @ LastEditTime : 2023-09-12 17:02:03
+// @ LastEditTime : 2023-09-14 08:20:11
 // @ LastEditors  : Eacher
 // @ --------------------------------------------------------------------------------<
 // @ Description  : 
@@ -52,7 +52,6 @@ func (nlr *NetlinkRoute) Exchange(sm *SendMessage, rm *ReceiveMessage) error {
 	nlr.isExchange, sm.sa = true, syscall.Sockaddr(nlr.Sal)
 	if err := nlr.write(sm.sendto); sm.Err == nil {
 		if sm.Err = err; sm.Err == nil {
-			rm.data = make([]byte, ReceiveDataSize)
 			if err = nlr.read(rm.recvfrom); rm.Err == nil {
 				rm.Err = err
 			}
@@ -90,7 +89,7 @@ func (nlr *NetlinkRoute) Send(sm *SendMessage) error {
 
 func (nlr *NetlinkRoute) receive(r chan<- *ReceiveMessage) {
 	for {
-		rm := &ReceiveMessage{data: make([]byte, ReceiveDataSize)}
+		rm := &ReceiveMessage{Data: make([]byte, ReceiveDataSize)}
 		if err := nlr.read(rm.recvfrom); rm.Err == nil {
 			rm.Err = err
 		}
