@@ -1,7 +1,7 @@
 // @@
 // @ Author       : Eacher
 // @ Date         : 2023-09-12 08:12:21
-// @ LastEditTime : 2023-09-14 10:30:34
+// @ LastEditTime : 2023-09-15 15:50:20
 // @ LastEditors  : Eacher
 // @ --------------------------------------------------------------------------------<
 // @ Description  : 
@@ -25,17 +25,21 @@ type SendNLMessage struct {
 	sa		syscall.Sockaddr
 
 	Err		error
-	Data 	[]byte
+	Attrs	[]packet.Attrs
 }
 
 func (sm *SendNLMessage) sendto(fd uintptr) bool {
-	if sm.Len < uint32(packet.SizeofNlMsghdr + len(sm.Data)) {
+	var load []byte
+	for _, v := sm.Attrs {
+		load = append(load, v.WireFormat()...)
+	}
+	if len(load) < 1 {
 		sm.Err = fmt.Errorf("data len error")
 		return false
 	}
-	b := make([]byte, sm.Len)
+	b := make([]byte, packet.SizeofNlMsghdr + len(load))
 	sm.WireFormatToByte((*[packet.SizeofNlMsghdr]byte)(b))
-	copy(b[packet.SizeofNlMsghdr:], sm.Data)
+	copy(b[packet.SizeofNlMsghdr:], load)
 	if err := syscall.Sendto(int(fd), b, 0, sm.sa); err != nil {
 		sm.Err = err
 		return false
