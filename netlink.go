@@ -1,7 +1,7 @@
 // @@
 // @ Author       : Eacher
 // @ Date         : 2023-09-11 11:04:00
-// @ LastEditTime : 2023-09-14 10:50:26
+// @ LastEditTime : 2023-09-16 09:10:54
 // @ LastEditors  : Eacher
 // @ --------------------------------------------------------------------------------<
 // @ Description  : 
@@ -62,7 +62,7 @@ func (nlr *NetlinkRoute) Exchange(sm *SendNLMessage, rm *ReceiveNLMessage) error
 				rm.Err = err
 			}
 			if custom {
-				nlr.f.SetReadDeadline(0) 
+				nlr.f.SetReadDeadline(time.Time{}) 
 			}
 			return rm.Err
 		}

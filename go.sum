@@ -1,2 +1,4 @@
 github.com/20yyq/packet v0.1.4-0.20230912082904-b8b1e62fb5ae h1:LBZweIDHUDWfmLmxhpm860fh5/ikbnJm/5aISBrXC1Y=
 github.com/20yyq/packet v0.1.4-0.20230912082904-b8b1e62fb5ae/go.mod h1:5k7ru+ECywP3EpRl6ERpKlhEHLJLXCH0vUfB4Na+t8w=
+github.com/20yyq/packet v0.1.4-0.20230916012308-7a6dfffaa1e9 h1:aoQz6avKBhWIm+wHKPrW2AiIhYYZeIVtcHM2eFVMudU=
+github.com/20yyq/packet v0.1.4-0.20230916012308-7a6dfffaa1e9/go.mod h1:5k7ru+ECywP3EpRl6ERpKlhEHLJLXCH0vUfB4Na+t8w=

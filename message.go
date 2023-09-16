@@ -1,7 +1,7 @@
 // @@
 // @ Author       : Eacher
 // @ Date         : 2023-09-12 08:12:21
-// @ LastEditTime : 2023-09-15 15:50:20
+// @ LastEditTime : 2023-09-16 09:08:42
 // @ LastEditors  : Eacher
 // @ --------------------------------------------------------------------------------<
 // @ Description  : 
@@ -30,7 +30,7 @@ type SendNLMessage struct {
 
 func (sm *SendNLMessage) sendto(fd uintptr) bool {
 	var load []byte
-	for _, v := sm.Attrs {
+	for _, v := range sm.Attrs {
 		load = append(load, v.WireFormat()...)
 	}
 	if len(load) < 1 {
