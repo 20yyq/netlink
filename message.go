@@ -1,7 +1,7 @@
 // @@
 // @ Author       : Eacher
 // @ Date         : 2023-09-12 08:12:21
-// @ LastEditTime : 2023-09-16 09:08:42
+// @ LastEditTime : 2023-09-18 09:43:31
 // @ LastEditors  : Eacher
 // @ --------------------------------------------------------------------------------<
 // @ Description  : 
@@ -37,7 +37,8 @@ func (sm *SendNLMessage) sendto(fd uintptr) bool {
 		sm.Err = fmt.Errorf("data len error")
 		return false
 	}
-	b := make([]byte, packet.SizeofNlMsghdr + len(load))
+	sm.Len = uint32(packet.SizeofNlMsghdr + len(load))
+	b := make([]byte, sm.Len)
 	sm.WireFormatToByte((*[packet.SizeofNlMsghdr]byte)(b))
 	copy(b[packet.SizeofNlMsghdr:], load)
 	if err := syscall.Sendto(int(fd), b, 0, sm.sa); err != nil {
