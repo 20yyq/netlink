@@ -1,7 +1,7 @@
 // @@
 // @ Author       : Eacher
 // @ Date         : 2023-09-11 11:04:00
-// @ LastEditTime : 2023-09-16 09:10:54
+// @ LastEditTime : 2023-09-20 11:32:23
 // @ LastEditors  : Eacher
 // @ --------------------------------------------------------------------------------<
 // @ Description  : 
@@ -12,10 +12,11 @@ package netlink
 
 import (
 	"fmt"
-	"time"
 	"io"
 	"sync"
 	"syscall"
+
+	"github.com/20yyq/packet"
 )
 
 type NetlinkRoute struct {
@@ -53,21 +54,49 @@ func (nlr *NetlinkRoute) Exchange(sm *SendNLMessage, rm *ReceiveNLMessage) error
 	nlr.isExchange, sm.sa = true, syscall.Sockaddr(nlr.Sal)
 	if err := nlr.write(sm.sendto); sm.Err == nil {
 		if sm.Err = err; sm.Err == nil {
-			f, custom := rm.recvfrom, false
-			if rm.Exchange != nil && rm.OutTime > 0 {
-				nlr.f.SetReadDeadline(time.Now().Add(rm.OutTime))
-				f, custom = rm.Exchange, true
-			}
-			if err = nlr.read(f); rm.Err == nil {
+			if err = nlr.read(rm.recvfrom); rm.Err == nil {
 				rm.Err = err
 			}
-			if custom {
-				nlr.f.SetReadDeadline(time.Time{}) 
+			for i := 0; i < 3; i++ {
+				if nlr.exchange(rm) {
+					err = nil
+					break
+				}
+				err = fmt.Errorf("io Exchange data err")
+			}
+			if rm.Err == nil {
+				rm.Err = err
 			}
 			return rm.Err
 		}
 	}
 	return sm.Err
+}
+
+func (nlr *NetlinkRoute) exchange(old *ReceiveNLMessage) bool {
+	sm := SendNLMessage{
+		NlMsghdr: &packet.NlMsghdr{Type: syscall.RTM_GETADDRLABEL, Flags: syscall.NLM_F_REQUEST|syscall.NLM_F_EXCL|syscall.NLM_F_ACK, Seq: 0xFFFFFFFF},
+		sa: syscall.Sockaddr(nlr.Sal),
+	}
+	sm.Attrs = append(sm.Attrs, packet.IfInfomsg{Index: 0})
+	rm, ok := ReceiveNLMessage{Data: make([]byte, ReceiveDataSize)}, false
+	if err := nlr.write(sm.sendto); sm.Err == nil {
+		if sm.Err = err; sm.Err == nil {
+			if err = nlr.read(rm.recvfrom); rm.Err == nil {
+				rm.Err = err
+			}
+			if rm.Err == nil {
+				for _, v := range rm.MsgList {
+					if v.Header.Seq == sm.Seq {
+						ok = true
+						continue
+					}
+					old.MsgList = append(old.MsgList, v)
+				}
+			}
+		}
+	}
+	return ok
 }
 
 func (nlr *NetlinkRoute) Receive() (<-chan *ReceiveNLMessage, error) {

@@ -1,7 +1,7 @@
 // @@
 // @ Author       : Eacher
 // @ Date         : 2023-09-12 08:12:21
-// @ LastEditTime : 2023-09-18 09:43:31
+// @ LastEditTime : 2023-09-20 11:19:13
 // @ LastEditors  : Eacher
 // @ --------------------------------------------------------------------------------<
 // @ Description  : 
@@ -12,7 +12,6 @@ package netlink
 
 import (
 	"fmt"
-	"time"
 	"syscall"
 
 	"github.com/20yyq/packet"
@@ -54,14 +53,12 @@ type ReceiveNLMessage struct {
 	Err			error
 	MsgList		[]*packet.NetlinkMessage
 	Sa			syscall.Sockaddr
-	Exchange	func(uintptr)bool
-	OutTime 	time.Duration
 }
 
 func (rm *ReceiveNLMessage) recvfrom(fd uintptr) bool {
 	if rm.Idx, rm.Sa, rm.Err = syscall.Recvfrom(int(fd), rm.Data, 0); rm.Err != nil {
 		return false
 	}
-	rm.MsgList = packet.NewNetlinkMessage(rm.Data[:rm.Idx])
+	rm.MsgList = append(rm.MsgList, packet.NewNetlinkMessage(rm.Data[:rm.Idx])...)
 	return true
 }
