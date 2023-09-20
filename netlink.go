@@ -1,7 +1,7 @@
 // @@
 // @ Author       : Eacher
 // @ Date         : 2023-09-11 11:04:00
-// @ LastEditTime : 2023-09-20 11:32:23
+// @ LastEditTime : 2023-09-20 13:40:21
 // @ LastEditors  : Eacher
 // @ --------------------------------------------------------------------------------<
 // @ Description  : 
@@ -57,13 +57,7 @@ func (nlr *NetlinkRoute) Exchange(sm *SendNLMessage, rm *ReceiveNLMessage) error
 			if err = nlr.read(rm.recvfrom); rm.Err == nil {
 				rm.Err = err
 			}
-			for i := 0; i < 3; i++ {
-				if nlr.exchange(rm) {
-					err = nil
-					break
-				}
-				err = fmt.Errorf("io Exchange data err")
-			}
+			nlr.exchange(rm)
 			if rm.Err == nil {
 				rm.Err = err
 			}
@@ -73,7 +67,7 @@ func (nlr *NetlinkRoute) Exchange(sm *SendNLMessage, rm *ReceiveNLMessage) error
 	return sm.Err
 }
 
-func (nlr *NetlinkRoute) exchange(old *ReceiveNLMessage) bool {
+func (nlr *NetlinkRoute) exchange(rev *ReceiveNLMessage) {
 	sm := SendNLMessage{
 		NlMsghdr: &packet.NlMsghdr{Type: syscall.RTM_GETADDRLABEL, Flags: syscall.NLM_F_REQUEST|syscall.NLM_F_EXCL|syscall.NLM_F_ACK, Seq: 0xFFFFFFFF},
 		sa: syscall.Sockaddr(nlr.Sal),
@@ -82,21 +76,27 @@ func (nlr *NetlinkRoute) exchange(old *ReceiveNLMessage) bool {
 	rm, ok := ReceiveNLMessage{Data: make([]byte, ReceiveDataSize)}, false
 	if err := nlr.write(sm.sendto); sm.Err == nil {
 		if sm.Err = err; sm.Err == nil {
-			if err = nlr.read(rm.recvfrom); rm.Err == nil {
-				rm.Err = err
-			}
-			if rm.Err == nil {
+			for !ok {
+				if err = nlr.read(rm.recvfrom); rm.Err == nil {
+					rm.Err = err
+				}
+				if rm.Err != nil {
+					rev.Err = rm.Err
+					break
+				}
 				for _, v := range rm.MsgList {
 					if v.Header.Seq == sm.Seq {
 						ok = true
 						continue
 					}
-					old.MsgList = append(old.MsgList, v)
+					rev.MsgList = append(rev.MsgList, v)
 				}
 			}
 		}
 	}
-	return ok
+	if !ok {
+		rev.Err = fmt.Errorf("io Exchange data err")
+	}
 }
 
 func (nlr *NetlinkRoute) Receive() (<-chan *ReceiveNLMessage, error) {
